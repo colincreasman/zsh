@@ -21,14 +21,34 @@ the symlink, so no paths need editing.
 1. Installs Homebrew if missing, then everything in `Brewfile`
    (including the Nerd Fonts the prompt and Terminal profile need).
 2. Clones `powerlevel10k`, `zsh-z` and `fzf-tab` into `plugins/` (gitignored).
-3. Symlinks every file in `home/` into `$HOME`. Existing real files are moved to
+3. Pre-fetches **`gitstatusd`**, the daemon behind Powerlevel10k's git segment.
+   It isn't bundled with the p10k repo, so without this the first prompt either
+   stalls downloading it or errors with *"gitstatus failed to initialize"*.
+4. Symlinks every file in `home/` into `$HOME`. Existing real files are moved to
    `<file>.bak-<timestamp>` first — nothing is ever deleted.
-4. Imports `terminal/chaf-dynamic.terminal` and makes it the default profile.
-5. Best-effort extras: a baseline pyenv Python, rustup, the ipython `custom`
+5. Imports `terminal/chaf-dynamic.terminal` and makes it the default profile.
+6. Best-effort extras: a baseline pyenv Python, rustup, the ipython `custom`
    profile used by the `ipy` alias.
+7. **Verifies every runtime dependency** and prints a pass/fail list, so you find
+   out immediately instead of via a broken prompt.
 
 It is idempotent — re-run it any time to pick up changes or update plugins.
-Flags: `--no-brew`, `--no-terminal`.
+Flags: `--no-brew`, `--no-terminal`, `--no-extras`.
+
+## Why it works out of the box
+
+The prompt has three dependencies that aren't just "clone a repo", and each is
+handled automatically:
+
+| Requirement | Why | Handled by |
+| --- | --- | --- |
+| `gitstatusd` binary | Powers the `vcs` (git) prompt segment; not shipped in the p10k clone | Pre-fetched in step 3 |
+| A Nerd Font | `.p10k.zsh` sets `POWERLEVEL9K_MODE=nerdfont-v3`, and the Terminal profile requests `JetBrainsMonoNLNFM-Light` by name — without it icons render as tofu boxes | `font-jetbrains-mono-nerd-font` + `font-meslo-lg-nerd-font` in the `Brewfile` |
+| `zsh-autosuggestions`, `zsh-syntax-highlighting`, `fzf`, `eza` | Sourced/called directly by `.zshrc` and the aliases | `Brewfile` |
+
+`zsh-z`, `fzf-tab` and `powerlevel10k` are plain git clones (step 2).
+`compinit` runs with `-i` so a fresh Mac's group-writable Homebrew directories
+can't block your first shell on an interactive prompt.
 
 ## Layout
 
