@@ -236,7 +236,9 @@ function fzfinit() {
     fpath+=~/.zfunc
     (( $+commands[fzf] )) && eval "$(fzf --zsh)"
 
-    autoload -Uz compinit && compinit
+    # -i ignores "insecure directories" instead of blocking the first shell on a
+    # fresh Mac with an interactive [y/n/a] prompt (group-writable brew dirs).
+    autoload -Uz compinit && compinit -i
 
     [[ -r $ZSH_PLUGINS/fzf-tab/fzf-tab.zsh ]] && source $ZSH_PLUGINS/fzf-tab/fzf-tab.zsh
     zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"

@@ -5,6 +5,7 @@
 #   ./install.sh              # everything (safe to re-run)
 #   ./install.sh --no-brew    # skip Homebrew/package installation
 #   ./install.sh --no-terminal# skip the Terminal.app profile import
+#   ./install.sh --no-extras  # skip optional pyenv/rustup/ipython setup
 #
 # Every step is idempotent. Existing real dotfiles are never deleted -- they are
 # moved to <file>.bak-<timestamp> before being replaced with a symlink.
@@ -15,12 +16,14 @@ REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TS="$(date +%Y%m%d%H%M%S)"
 DO_BREW=1
 DO_TERMINAL=1
+DO_EXTRAS=1
 
 for arg in "$@"; do
   case "$arg" in
     --no-brew)     DO_BREW=0 ;;
     --no-terminal) DO_TERMINAL=0 ;;
-    -h|--help)     sed -n '2,12p' "$0"; exit 0 ;;
+    --no-extras)   DO_EXTRAS=0 ;;
+    -h|--help)     sed -n '2,14p' "$0"; exit 0 ;;
     *) echo "unknown option: $arg" >&2; exit 2 ;;
   esac
 done
@@ -70,6 +73,20 @@ mkdir -p "$REPO/plugins"
 clone_or_update https://github.com/romkatv/powerlevel10k.git "$REPO/plugins/powerlevel10k"
 clone_or_update https://github.com/agkozak/zsh-z.git         "$REPO/plugins/zsh-z"
 clone_or_update https://github.com/Aloxaf/fzf-tab            "$REPO/plugins/fzf-tab"
+
+# Powerlevel10k's `vcs` segment is driven by gitstatusd, a binary that is NOT
+# bundled with the repo -- it is fetched into ~/.cache/gitstatus on first use.
+# Pre-fetch it here so the very first prompt is fast and never shows
+# "gitstatus failed to initialize".
+GITSTATUS_INSTALL="$REPO/plugins/powerlevel10k/gitstatus/install"
+if [[ -x "$GITSTATUS_INSTALL" ]]; then
+  info "Pre-fetching gitstatusd (powers the p10k git prompt)..."
+  if "$GITSTATUS_INSTALL" -f >/dev/null 2>&1; then
+    ok "gitstatusd ready: $(ls "$HOME"/.cache/gitstatus/gitstatusd-* 2>/dev/null | head -1)"
+  else
+    warn "gitstatusd pre-fetch failed; p10k will retry on first prompt."
+  fi
+fi
 
 # ------------------------------------------------------------------
 # 3. Symlink dotfiles into $HOME (backing up anything already there)
@@ -128,18 +145,68 @@ fi
 # ------------------------------------------------------------------
 # 5. Optional extras (never fatal)
 # ------------------------------------------------------------------
-if command -v pyenv >/dev/null 2>&1 && [[ -z "$(pyenv versions --bare 2>/dev/null)" ]]; then
-  info "Installing a baseline python via pyenv..."
-  pyenv install -s 3.12 && pyenv global 3.12 || warn "pyenv install failed; skip."
+if [[ $DO_EXTRAS == 1 ]]; then
+  if command -v pyenv >/dev/null 2>&1 && [[ -z "$(pyenv versions --bare 2>/dev/null)" ]]; then
+    info "Installing a baseline python via pyenv..."
+    pyenv install -s 3.12 && pyenv global 3.12 || warn "pyenv install failed; skip."
+  fi
+
+  if [[ ! -f "$HOME/.cargo/env" ]]; then
+    info "Installing Rust (rustup)..."
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+      || warn "rustup install failed; skip."
+  fi
+
+  command -v ipython >/dev/null 2>&1 && ipython profile create custom >/dev/null 2>&1 || true
+else
+  warn "Skipping optional extras (--no-extras)."
 fi
 
-if [[ ! -f "$HOME/.cargo/env" ]]; then
-  info "Installing Rust (rustup)..."
-  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
-    || warn "rustup install failed; skip."
-fi
+# ------------------------------------------------------------------
+# 6. Verify everything the config depends on at runtime
+# ------------------------------------------------------------------
+info "Verifying setup..."
+FAILED=0
+check() {  # check <label> <test-expression...>
+  local label="$1"; shift
+  if "$@" >/dev/null 2>&1; then
+    ok "$label"
+  else
+    warn "MISSING: $label"
+    FAILED=$((FAILED + 1))
+  fi
+}
+have()     { command -v "$1" >/dev/null 2>&1; }
+exists()   { [[ -e "$1" ]]; }
+linked()   { [[ -L "$1" && "$(readlink "$1")" == "$REPO"/* ]]; }
 
-command -v ipython >/dev/null 2>&1 && ipython profile create custom >/dev/null 2>&1 || true
+BP="${HOMEBREW_PREFIX:-/opt/homebrew}"
+
+check "brew"                      have brew
+check "eza (every ls alias)"      have eza
+check "fzf (fzfinit + ^R)"        have fzf
+check "git"                       have git
+check "pyenv (pyinit)"            have pyenv
+check "zsh-autosuggestions"       exists "$BP/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+check "zsh-syntax-highlighting"   exists "$BP/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+check "powerlevel10k"             exists "$REPO/plugins/powerlevel10k/powerlevel10k.zsh-theme"
+check "zsh-z"                     exists "$REPO/plugins/zsh-z/zsh-z.plugin.zsh"
+check "fzf-tab"                   exists "$REPO/plugins/fzf-tab/fzf-tab.zsh"
+check "gitstatusd (p10k vcs)"     bash -c 'ls "$HOME"/.cache/gitstatus/gitstatusd-* >/dev/null 2>&1'
+check "~/.zshrc -> repo"          linked "$HOME/.zshrc"
+check "~/.p10k.zsh -> repo"       linked "$HOME/.p10k.zsh"
+
+# p10k is configured with POWERLEVEL9K_MODE=nerdfont-v3, and the Terminal
+# profile asks for JetBrainsMonoNLNFM-Light by PostScript name. Without a Nerd
+# Font the prompt renders as tofu boxes.
+check "JetBrains Mono Nerd Font" bash -c \
+  'ls ~/Library/Fonts/JetBrainsMonoNLNerdFontMono-*.ttf /Library/Fonts/JetBrainsMonoNLNerdFontMono-*.ttf 2>/dev/null | grep -q .'
+
+if [[ $FAILED -gt 0 ]]; then
+  warn "$FAILED check(s) failed. Re-run without --no-brew, or install the items above."
+else
+  ok "All checks passed."
+fi
 
 printf '\n'
 ok "All done!"
