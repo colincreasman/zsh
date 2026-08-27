@@ -1,3 +1,15 @@
+# Machine-specific config (work paths, proxies, secrets)
+zsh/local.zsh
+
+# Plugins cloned by install.sh
+plugins/
+
+# Raw package list written by capture.sh; Brewfile is the source of truth
+Brewfile.generated
+
+# Backups made by install.sh
+*.bak-*
+
 # Personal/local files not for version control
 CLAUDE.md
 

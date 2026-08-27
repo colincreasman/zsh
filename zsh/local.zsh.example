@@ -1,0 +1,21 @@
+# local.zsh - machine-specific config. NOT tracked in git.
+#
+# Copy to local.zsh and edit. Sourced last by .zshrc, so anything here wins.
+# Good candidates: work paths, corporate proxies, per-machine SDKs, secrets.
+
+# --- Example: project locations + shortcuts ---
+# export MYPROJ=~/src/myproject
+# alias mp='cd $MYPROJ'
+
+# --- Example: corporate proxy ---
+# function setproxies() {
+#     export http_proxy=http://proxy.example.com:80
+#     export https_proxy=$http_proxy
+#     export no_proxy=localhost,127.0.0.0/8
+# }
+
+# --- Example: Google Cloud SDK ---
+# if [ -f "$HOME/google-cloud-sdk/path.zsh.inc" ]; then
+#     . "$HOME/google-cloud-sdk/path.zsh.inc"
+#     . "$HOME/google-cloud-sdk/completion.zsh.inc"
+# fi
