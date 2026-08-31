@@ -100,9 +100,18 @@ From the Terminal profile:
 
 | Keys | Action |
 | --- | --- |
+| `Ctrl+Up/Down` | Page up/down |
 | `Ctrl+Shift+Up/Down` | Page up/down |
 | `Ctrl+Shift+Opt+Up/Down` | Line up/down |
 | `Ctrl+Shift+Opt+Cmd+Up/Down` | Top / bottom of scrollback |
+
+macOS claims `Ctrl+Up` (Mission Control) and `Ctrl+Down` (Application Windows)
+system-wide. If they don't scroll, clear or remap them in **System Settings >
+Keyboard > Keyboard Shortcuts > Mission Control**.
+
+`install.sh` re-syncs `keyMapBoundKeys` from `terminal/chaf-dynamic.terminal`
+into the live profile on every run. Terminal.app rewrites its own settings on
+quit, so if the bindings ever revert, re-run `./install.sh --no-brew --no-extras`.
 
 ## Handy aliases
 

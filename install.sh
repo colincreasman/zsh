@@ -135,6 +135,46 @@ if [[ $DO_TERMINAL == 1 ]]; then
     defaults write com.apple.Terminal "Default Window Settings" -string "$PROFILE_NAME" || true
     defaults write com.apple.Terminal "Startup Window Settings" -string "$PROFILE_NAME" || true
     ok "Set '$PROFILE_NAME' as the default Terminal profile."
+
+    # An already-imported profile keeps whatever keyMapBoundKeys it was imported
+    # with, so re-sync them from the repo profile. Terminal.app rewrites its
+    # Window Settings on quit, so run this with Terminal closed (or re-run it)
+    # if the bindings ever revert.
+    info "Syncing scroll key bindings into the live '$PROFILE_NAME' profile..."
+    if PROFILE_FILE="$PROFILE_FILE" PROFILE_NAME="$PROFILE_NAME" python3 - <<'PY'
+import os, plistlib, subprocess, sys, tempfile
+
+name = os.environ["PROFILE_NAME"]
+repo_profile = plistlib.load(open(os.environ["PROFILE_FILE"], "rb"))
+wanted = repo_profile.get("keyMapBoundKeys", {})
+if not wanted:
+    sys.exit(0)
+
+with tempfile.NamedTemporaryFile(suffix=".plist", delete=False) as tmp:
+    path = tmp.name
+subprocess.run(["defaults", "export", "com.apple.Terminal", path], check=True)
+subprocess.run(["plutil", "-convert", "binary1", path], check=True)
+
+prefs = plistlib.load(open(path, "rb"))
+profile = prefs.get("Window Settings", {}).get(name)
+if profile is None:
+    sys.exit(1)
+
+current = profile.get("keyMapBoundKeys", {})
+if current == wanted:
+    sys.exit(0)
+
+profile["keyMapBoundKeys"] = wanted
+prefs["Window Settings"][name] = profile
+plistlib.dump(prefs, open(path, "wb"), fmt=plistlib.FMT_BINARY)
+subprocess.run(["defaults", "import", "com.apple.Terminal", path], check=True)
+os.unlink(path)
+PY
+    then
+      ok "Scroll key bindings are in sync."
+    else
+      warn "Could not sync key bindings; re-import $PROFILE_FILE manually."
+    fi
   else
     warn "No terminal profile at $PROFILE_FILE"
   fi
@@ -221,7 +261,12 @@ Next steps:
      it is gitignored and sourced last.
 
 Terminal scroll key bindings (from the profile):
+  Ctrl+Up/Down                 -> page up/down
   Ctrl+Shift+Up/Down           -> page up/down
   Ctrl+Shift+Alt+Up/Down       -> line up/down
   Ctrl+Shift+Alt+Cmd+Up/Down   -> top / bottom of scrollback
+
+  Ctrl+Up/Down are macOS Mission Control / Application Windows shortcuts by
+  default. If they don't scroll, clear them in System Settings > Keyboard >
+  Keyboard Shortcuts > Mission Control.
 NEXT
