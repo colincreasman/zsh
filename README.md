@@ -102,6 +102,7 @@ From the Terminal profile:
 | --- | --- |
 | `Ctrl+Up/Down` | Page up/down |
 | `Ctrl+Shift+Up/Down` | Page up/down |
+| `Ctrl+Opt+Cmd+Up/Down` | Line up/down |
 | `Ctrl+Shift+Opt+Up/Down` | Line up/down |
 | `Ctrl+Shift+Opt+Cmd+Up/Down` | Top / bottom of scrollback |
 

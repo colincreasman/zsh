@@ -263,6 +263,7 @@ Next steps:
 Terminal scroll key bindings (from the profile):
   Ctrl+Up/Down                 -> page up/down
   Ctrl+Shift+Up/Down           -> page up/down
+  Ctrl+Alt+Cmd+Up/Down         -> line up/down
   Ctrl+Shift+Alt+Up/Down       -> line up/down
   Ctrl+Shift+Alt+Cmd+Up/Down   -> top / bottom of scrollback
 
