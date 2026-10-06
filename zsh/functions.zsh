@@ -19,7 +19,7 @@ function grbtheirs() {
 }
 function grbog() {
     [[ -z $MAIN ]] && export MAIN="$(git remote show origin | grep 'HEAD branch' | awk '{print $NF}')"
-    git rebase -i -- origin/$MAIN
+    git rebase --no-verify -i -- origin/$MAIN
 }
 function gcfog() {
     [ $# -gt 0 ] && _PATH_=$1

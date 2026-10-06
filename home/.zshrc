@@ -45,6 +45,7 @@ export CASE_SENSITIVE=false
 # ~~~~~~~~~~~~~~~~~~ Dotfiles ~~~~~~~~~~~~~~~~~~~
 source $ZSH_HOME/aliases.zsh
 source $ZSH_HOME/functions.zsh
+source $ZSH_HOME/git-dirlog.sh
 
 pyinit
 fzfinit

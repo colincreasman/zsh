@@ -84,8 +84,16 @@ alias grev='git rev-parse HEAD | pbcopy' # Get short hash of current commit
 alias ga='git add'
 alias gaa='ga --all "$(git rev-parse --show-toplevel)"' # Add everything possible
 
-alias grm='git restore --staged --worktree --no-overlay' # Remove staged/unstaged/untracked files (use with caution)
-alias gcls='grm "$(git rev-parse --show-toplevel)"' # Remove EVERYTHING outputted by `git status` to get into a clean state
+alias grm='git restore --staged --worktree --no-overlay' # Discard staged/unstaged changes to tracked paths (use with caution; untracked files are left alone)
+# Remove EVERYTHING outputted by `git status` to get into a clean state (use with caution), repo-wide from any subdir:
+# staged/unstaged changes, conflicts, untracked files/dirs/nested repos, and dirty submodules. Ignored files and stashes are kept.
+alias gcls='\
+    git reset --hard --no-recurse-submodules && \
+    git clean -ffd :/ && \
+    git submodule --quiet update --checkout --force --recursive && \
+    git submodule --quiet foreach --recursive "git clean -ffdq" && \
+    gs \
+'
 
 # ~~~~~~~~~~~~~~~~~~ Aliases[Git][Commit]~~~~~~~~~~~~~~~~~~~
 alias gcM='git commit --no-verify'
