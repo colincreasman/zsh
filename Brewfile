@@ -36,6 +36,7 @@ brew "repo"                      # google `repo` tool
 brew "mosquitto"                 # MQTT, on PATH in .zshrc
 brew "pngpaste"
 brew "f3"
+brew "actionlint"                # GitHub Actions workflow linter
 
 # ~~~~~~~~~~~~~~~~~~ Apps ~~~~~~~~~~~~~~~~~~~
 cask "alt-tab"
@@ -43,3 +44,6 @@ cask "android-commandlinetools"  # ANDROID_HOME in .zshrc
 cask "betterdisplay"
 cask "copilot-cli"
 cask "docker-desktop"
+cask "kicad"                     # Fortemis keyboard PCBs
+cask "libreoffice"               # portfolio's render_resume.py (DOCX -> PDF)
+cask "linearmouse"               # mouse/trackpad tuning for the toucan2 trackpad
