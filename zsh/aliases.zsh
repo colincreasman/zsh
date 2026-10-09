@@ -43,7 +43,7 @@ alias down='cd ~/Downloads'
 alias desk='cd ~/Desktop'
 alias apps='cd /Applications'
 
-export REPOS=~/Repos
+export REPOS=~/Personal/Repos
 export KBD=$REPOS/kbd
 
 alias repos='cd $REPOS'

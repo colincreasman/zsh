@@ -8,7 +8,11 @@ fi
 # ~/.zshrc is a symlink into the zsh-config checkout; :A resolves it, so the
 # repo can live anywhere without editing a single path below.
 ZSH_CONFIG=${${(%):-%N}:A:h:h}
-[[ -d $ZSH_CONFIG/zsh ]] || ZSH_CONFIG=$HOME/zsh-config
+if [[ ! -d $ZSH_CONFIG/zsh ]]; then
+  for ZSH_CONFIG in $HOME/Personal/Repos/zsh-config $HOME/zsh-config; do
+    [[ -d $ZSH_CONFIG/zsh ]] && break
+  done
+fi
 export ZSH_CONFIG
 export ZSH_HOME=$ZSH_CONFIG/zsh
 export ZSH_PLUGINS=$ZSH_CONFIG/plugins

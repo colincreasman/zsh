@@ -7,8 +7,8 @@ Terminal.app profile.
 ## Fresh Mac, from zero
 
 ```sh
-git clone https://github.com/colincreasman/zsh.git ~/zsh-config
-cd ~/zsh-config && ./install.sh
+git clone https://github.com/colincreasman/zsh.git ~/Personal/Repos/zsh-config
+cd ~/Personal/Repos/zsh-config && ./install.sh
 ```
 
 Then **quit Terminal.app entirely (⌘Q) and reopen it.** That's it.

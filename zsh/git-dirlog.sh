@@ -4,7 +4,7 @@
 # Sourced by zsh-config/home/.zshrc and home/.bashrc (both symlinked into ~).
 #
 # Set GLOG_DIR_REPO to a repo path to make it the default target, e.g.
-#   export GLOG_DIR_REPO=~/Repos/kbd/forager/firmware
+#   export GLOG_DIR_REPO=~/Personal/Repos/kbd/forager/firmware
 
 # Normalize a fuzzy time expression into something git's approxidate parses
 # correctly. git accepts a lot of input but silently misreads some of it:
@@ -117,7 +117,7 @@ Time bounds -- each takes either a fuzzy date or a commit-ish on the branch:
 
 Examples:
   glog-dir src/api
-  glog-dir -n 40 -C ~/Repos/kbd/forager/firmware config
+  glog-dir -n 40 -C ~/Personal/Repos/kbd/forager/firmware config
   glog-dir --since='last 7 days' src/api
   glog-dir --after=9f2c1ab --until=yesterday docs
   glog-dir --since=v1.4.0 --before=v1.5.0 -f src/api
