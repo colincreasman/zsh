@@ -54,7 +54,7 @@ can't block your first shell on an interactive prompt.
 
 | Path | What it is |
 | --- | --- |
-| `home/` | Dotfiles symlinked into `$HOME` (`.zshrc`, `.zshenv`, `.zprofile`, `.p10k.zsh`, `.vimrc`) |
+| `home/` | Dotfiles symlinked into `$HOME` (`.zshrc`, `.zshenv`, `.zprofile`, `.p10k.zsh`, `.vimrc`, `.bashrc`) |
 | `zsh/aliases.zsh` | All aliases — git, eza/ls, navigation |
 | `zsh/functions.zsh` | Functions and ZLE widgets — ghost-text history, `pyinit`, `fzfinit`, `setkeybindings` |
 | `zsh/local.zsh` | **Not tracked.** Machine-specific config, sourced last |

@@ -1,7 +1,7 @@
 # shellcheck shell=sh
 # glog-dir — show the most recent commits that touched a folder on main.
 # POSIX-compatible so it can be sourced from both zsh and bash.
-# Sourced by zsh-config/home/.zshrc and ~/.bashrc.
+# Sourced by zsh-config/home/.zshrc and home/.bashrc (both symlinked into ~).
 #
 # Set GLOG_DIR_REPO to a repo path to make it the default target, e.g.
 #   export GLOG_DIR_REPO=~/Repos/kbd/forager/firmware
