@@ -183,9 +183,105 @@ function _hs_fzf_history() {
     zle reset-prompt
 }
 
+# opt+c: copy the selection, or with nothing selected, everything from the cursor
+# to the end of the line, ghost suggestion included (so `la ` + a suggested path
+# copies just the path). Leading underscore keeps zsh-autosuggestions from
+# clearing POSTDISPLAY before this runs (see above).
+function _copy_selection() {
+    local text
+    if (( REGION_ACTIVE )); then
+        local lo=$(( MARK < CURSOR ? MARK : CURSOR )) hi=$(( MARK < CURSOR ? CURSOR : MARK ))
+        text=${BUFFER:$lo:$(( hi - lo ))}
+    else
+        text="$RBUFFER$POSTDISPLAY"
+    fi
+    if [[ -z $text ]]; then
+        zle -M 'nothing to copy'
+        return
+    fi
+    print -rn -- "$text" | pbcopy
+    zle -M "copied: $text"
+}
+
+# ~~~~~~~~~~~~~~~~~~ Shift-select (VS Code style) ~~~~~~~~~~~~~~~~~~~
+# shift+arrow / shift+opt+arrow / shift+cmd+arrow grow or shrink a selection by a
+# character / word / to the line edge. While text is selected, typing or pasting
+# replaces it, backspace/delete remove it, plain arrows drop it at its start/end,
+# and opt+c copies it. The escape codes come from the chaf-dynamic Terminal profile.
+typeset -gA _SELECT_MOVES=(
+    $'\e[1;2D'  .backward-char       $'\e[1;2C'  .forward-char
+    $'\e[1;4D'  .backward-word       $'\e[1;4C'  .emacs-forward-word
+    $'\e[1;10D' .beginning-of-line   $'\e[1;10C' .end-of-line
+)
+
+function _select_move() {
+    if (( ! REGION_ACTIVE )); then
+        MARK=$CURSOR
+        REGION_ACTIVE=1
+        zle -K shift-select
+    fi
+    zle ${_SELECT_MOVES[$KEYS]}
+    if (( CURSOR == MARK )); then   # shrunk back to nothing
+        REGION_ACTIVE=0
+        zle -K main
+    fi
+}
+
+# Any other key while text is selected: drop the selection, then handle the key.
+function _select_exit() {
+    local lo=$(( MARK < CURSOR ? MARK : CURSOR )) hi=$(( MARK < CURSOR ? CURSOR : MARK ))
+    REGION_ACTIVE=0
+    zle -K main
+    case $KEYS in
+        $'\e[D'|$'\eOD') CURSOR=$lo ;;
+        $'\e[C'|$'\eOC') CURSOR=$hi ;;
+        $'\x7f'|$'\b'|$'\e\x7f'|$'\e\b'|$'\e[3~') BUFFER[lo+1,hi]=''; CURSOR=$lo ;;
+        $'\e[200~') BUFFER[lo+1,hi]=''; CURSOR=$lo; zle bracketed-paste ;;
+        *)
+            [[ $KEYS == [[:print:]]* ]] && { BUFFER[lo+1,hi]=''; CURSOR=$lo }
+            zle -U -- "$KEYS" ;;   # replay it in the normal keymap
+    esac
+}
+
 function setkeybindings() {
     bindkey -r "^X" && bindkey "^X" _expand_alias
     bindkey -r "^[-" && bindkey "^[-" redo # opt+_ for undo
+
+    # Home-row-mod misfires (holding S/L = ctrl, D/K = opt) and Windows habits
+    # kept wiping words or whole lines, so no key may kill text, drop the line,
+    # or flip into vi/overwrite mode (^X^V, where typing then deletes text).
+    # opt+delete is the one exception, put back right after the loop.
+    local -a no_keys_for=(kill-word backward-kill-word kill-line backward-kill-line
+        kill-whole-line kill-buffer kill-region delete-word backward-delete-word
+        send-break push-line push-line-or-edit vi-cmd-mode overwrite-mode
+        delete-char-or-list)
+    local binding
+    local -a words
+    for binding in "${(@f)$(bindkey -L)}"; do
+        words=(${(z)binding})
+        (( ${no_keys_for[(Ie)${words[-1]}]} )) && bindkey -r "${(Q)words[2]}"
+    done
+    bindkey '^[^?' backward-kill-word   # opt+delete
+    bindkey '^[^H' backward-kill-word   # opt+delete when Delete sends ^H
+    setopt IGNORE_EOF   # unbinding ^D alone still lets it exit the shell
+
+    zle -N _copy-selection _copy_selection
+    bindkey '^[c' _copy-selection   # opt+c (was fzf's cd widget)
+
+    zle -N _select-move _select_move
+    zle -N _select-exit _select_exit
+    bindkey -N shift-select
+    bindkey -M shift-select -R '^@'-'^?' _select-exit
+    bindkey -M shift-select -R '\M-^@'-'\M-^?' _select-exit
+    local seq
+    for seq in ${(k)_SELECT_MOVES}; do
+        bindkey "$seq" _select-move
+        bindkey -M shift-select "$seq" _select-move
+    done
+    for seq in '^[[D' '^[OD' '^[[C' '^[OC' '^?' '^H' '^[^?' '^[^H' '^[[3~' '^[[200~'; do
+        bindkey -M shift-select "$seq" _select-exit
+    done
+    bindkey -M shift-select '^[c' _copy-selection
 
     # `setkeybindings classic` restores the pre-ghost-history bindings live,
     # no reload required. `setkeybindings` (or `setkeybindings ghost`) = new behavior.

@@ -117,3 +117,5 @@ unset -f path_prepend path_append
 # ~~~~~~~~~~~~~~~~~~ Machine-local overrides ~~~~~~~~~~~~~~~~~~~
 # Not tracked in git: work paths, proxies, secrets, per-machine SDKs.
 [[ -r $ZSH_HOME/local.zsh ]] && source $ZSH_HOME/local.zsh
+export PATH="/opt/homebrew/opt/node@22/bin:$PATH"
+export PATH="/opt/homebrew/opt/node@22/bin:$PATH"

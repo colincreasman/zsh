@@ -58,8 +58,8 @@ alias _eza='\
     --icons=always --color=always --color-scale=age --color-scale-mode=fixed \
 ' # Base eza command with preferred options
 
-alias ls='_eza --grid' # Default ls uses grid
-alias la='ls -1Alh --extended --bytes' # Long listing with header and total size
+alias ls='_eza' # Default ls uses grid
+alias la='ls -1Alh --bytes' # Long listing with header and total size
 
 alias ll='la --total-size --sort=size' # Long listing sorted by size (warning SLOW)
 alias lr='la --recurse --tree' # Long listing with tree view (warning SLOW)
