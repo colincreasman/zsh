@@ -30,6 +30,24 @@ function grsog() {
     [[ -z $MAIN ]] && export MAIN="$(git remote show origin | grep 'HEAD branch' | awk '{print $NF}')"
     git reset --hard origin/$MAIN
 }
+# Print the 8-char short form of a commit hash and copy it to the clipboard.
+# Accepts a full/partial hex hash, or any ref when run inside a git repo.
+function ghash() {
+    if [[ $# -ne 1 ]]; then
+        echo "usage: ghash <commit-hash|ref>" >&2
+        return 1
+    fi
+    local sha=$1
+    if [[ ! $sha =~ ^[0-9a-fA-F]{8,}$ ]]; then
+        sha=$(git rev-parse --verify --quiet "$1^{commit}") || {
+            echo "ghash: '$1' is not a hash or resolvable ref" >&2
+            return 1
+        }
+    fi
+    sha=${(L)sha[1,8]}
+    print -n -- $sha | pbcopy
+    echo $sha
+}
 # ~~~~~~~~~~~~~~~~~~ Functions[PS] ~~~~~~~~~~~~~~~~~~~
 function psls() {
     ps aux | grep -i $1 | grep -v grep
@@ -356,6 +374,10 @@ function fzfinit() {
     zstyle ':fzf-tab:complete:chmod:*' fzf-preview 'eza -1a --group-directories-first --classify --sort=name --color=always $realpath'
     zstyle ':fzf-tab:complete:sh:*' fzf-preview 'eza -1a --group-directories-first --classify --sort=name --color=always $realpath'
     zstyle ':fzf-tab:complete:exec:*' fzf-preview 'eza -1a --group-directories-first --classify --sort=name --color=always $realpath'
+
+    # zsh-z feeds its own frecency-ranked matches (absolute paths) into compadd
+    zstyle ':fzf-tab:complete:z:*' fzf-preview 'eza -1a --group-directories-first --classify --sort=name --color=always ${~realpath}'
+    zstyle ':fzf-tab:complete:zshz:*' fzf-preview 'eza -1a --group-directories-first --classify --sort=name --color=always ${~realpath}'
 
     # Preview the value of an environment variable when tabbing into it
     zstyle ':fzf-tab:complete:(-command-|-parameter-|-export-):*' fzf-preview 'echo ${(P)word}'
