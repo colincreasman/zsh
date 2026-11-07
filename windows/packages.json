@@ -1,0 +1,34 @@
+{
+  "_comment": "Windows counterpart of the Brewfile. install.ps1 installs each id with winget.",
+  "packages": [
+    { "id": "Microsoft.PowerShell",          "name": "PowerShell 7",            "why": "the shell itself (profile needs 7+)" },
+    { "id": "Git.Git",                        "name": "git" },
+    { "id": "GitHub.cli",                     "name": "gh",                      "why": "GitHub CLI" },
+    { "id": "JanDeDobbeleer.OhMyPosh",        "name": "Oh My Posh",              "why": "Powerlevel10k replacement (chaf.omp.json)" },
+    { "id": "junegunn.fzf",                   "name": "fzf",                     "why": "Ctrl+R history, Tab completion" },
+    { "id": "eza-community.eza",              "name": "eza",                     "why": "every ls alias and the completion previews" },
+    { "id": "ajeetdsouza.zoxide",             "name": "zoxide",                  "why": "zsh-z replacement (z / zi)" },
+    { "id": "sharkdp.bat",                    "name": "bat" },
+    { "id": "tldr-pages.tlrc",                "name": "tldr" },
+    { "id": "DEVCOM.JetBrainsMonoNerdFont",   "name": "JetBrainsMono Nerd Font", "why": "prompt icons + Windows Terminal profile" },
+    { "id": "Microsoft.VisualStudioCode",     "name": "VS Code",                 "why": "EDITOR / COPILOT_EDITOR use `code --wait`" },
+    { "id": "GitHub.Copilot",                 "name": "Copilot CLI" },
+    { "id": "OpenJS.NodeJS.LTS",              "name": "Node.js" },
+    { "id": "Rustlang.Rustup",                "name": "rustup" },
+    { "id": "Microsoft.OpenJDK.21",           "name": "OpenJDK 21",              "why": "JAVA_HOME" },
+    { "id": "Bazel.Bazelisk",                 "name": "bazelisk" },
+    { "id": "direnv.direnv",                  "name": "direnv" },
+    { "id": "rhysd.actionlint",               "name": "actionlint" },
+    { "id": "JFrog.JFrogCLI",                 "name": "jfrog-cli" },
+    { "id": "Docker.DockerDesktop",           "name": "Docker Desktop",          "optional": true },
+    { "id": "SublimeHQ.SublimeMerge",         "name": "Sublime Merge",           "optional": true },
+    { "id": "KiCad.KiCad",                    "name": "KiCad",                   "optional": true, "why": "Fortemis keyboard PCBs" },
+    { "id": "TheDocumentFoundation.LibreOffice", "name": "LibreOffice",          "optional": true, "why": "portfolio render_resume.py" },
+    { "id": "Google.CloudSDK",                "name": "gcloud",                  "optional": true },
+    { "id": "Android.PlatformTools",          "name": "Android platform-tools",  "optional": true }
+  ],
+  "modules": [
+    { "name": "PSReadLine", "why": "inline suggestions, syntax colors (2.2+)" },
+    { "name": "PSFzf",      "why": "fzf Ctrl+R / Ctrl+T / Tab completion" }
+  ]
+}

@@ -4,6 +4,8 @@ My complete macOS shell setup: zsh + [Powerlevel10k](https://github.com/romkatv/
 fzf-driven completion and history, an `eza`-based `ls`, and the `chaf-dynamic`
 Terminal.app profile.
 
+> On Windows? The PowerShell equivalent of all of this lives in [`windows/`](windows/README.md).
+
 ## Fresh Mac, from zero
 
 ```sh

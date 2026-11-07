@@ -1,0 +1,6 @@
+// Paste into the "actions" array of Windows Terminal's settings.json (Ctrl+, > Open JSON file).
+// Mirrors the scroll bindings of the macOS chaf-dynamic profile.
+{ "command": "scrollUpPage",   "keys": "ctrl+up" },
+{ "command": "scrollDownPage", "keys": "ctrl+down" },
+{ "command": "scrollToTop",    "keys": "ctrl+shift+home" },
+{ "command": "scrollToBottom", "keys": "ctrl+shift+end" }

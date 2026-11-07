@@ -1,0 +1,20 @@
+# local.ps1 - machine-specific config. NOT tracked in git.
+#
+# Copy to local.ps1 and edit (install.ps1 seeds it for you; open it with `el`).
+# Dot-sourced last by profile.ps1, so anything here wins.
+# Good candidates: work paths, corporate proxies, per-machine SDKs, secrets.
+
+# --- Example: project locations + shortcuts ---
+# $env:MYPROJ = "$HOME\src\myproject"
+# function mp { Set-Location $env:MYPROJ }
+
+# --- Example: corporate proxy ---
+# function setproxies {
+#     $env:http_proxy = 'http://proxy.example.com:80'
+#     $env:https_proxy = $env:http_proxy
+#     $env:no_proxy = 'localhost,127.0.0.0/8'
+# }
+
+# --- Example: Google Cloud SDK, from wherever it's installed ---
+# $sdk = "$env:LOCALAPPDATA\Google\Cloud SDK\google-cloud-sdk\bin"
+# if (Test-Path $sdk) { Add-PathEntry $sdk }

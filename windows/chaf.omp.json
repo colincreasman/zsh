@@ -1,0 +1,74 @@
+{
+  "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
+  "version": 3,
+  "final_space": true,
+  "blocks": [
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "newline": true,
+      "segments": [
+        { "type": "text", "style": "plain", "foreground": "darkGray", "template": "╭─ " },
+        {
+          "type": "path",
+          "style": "plain",
+          "foreground": "blue",
+          "template": "{{ .Path }}",
+          "properties": { "style": "full", "home_icon": "~", "folder_separator_icon": "/" }
+        }
+      ]
+    },
+    {
+      "type": "prompt",
+      "alignment": "right",
+      "segments": [
+        {
+          "type": "status",
+          "style": "plain",
+          "foreground": "green",
+          "foreground_templates": ["{{ if gt .Code 0 }}red{{ end }}"],
+          "template": "{{ if gt .Code 0 }}✘ {{ .Code }}{{ else }}✔{{ end }} ",
+          "properties": { "always_enabled": true }
+        },
+        {
+          "type": "time",
+          "style": "plain",
+          "foreground": "lightCyan",
+          "template": "{{ .CurrentDate | date .Format }}",
+          "properties": { "time_format": "03:04 PM" }
+        }
+      ]
+    },
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "newline": true,
+      "segments": [
+        { "type": "text", "style": "plain", "foreground": "darkGray", "template": "╰─" },
+        {
+          "type": "text",
+          "style": "plain",
+          "foreground": "green",
+          "foreground_templates": ["{{ if gt .Code 0 }}red{{ end }}"],
+          "template": "❯"
+        }
+      ]
+    },
+    {
+      "type": "rprompt",
+      "segments": [
+        {
+          "type": "git",
+          "style": "plain",
+          "foreground": "green",
+          "foreground_templates": [
+            "{{ if or (.Working.Changed) (.Staging.Changed) }}yellow{{ end }}",
+            "{{ if gt .Working.Untracked 0 }}magenta{{ end }}"
+          ],
+          "template": "{{ .HEAD }}{{ if .BranchStatus }} {{ .BranchStatus }}{{ end }}{{ if .Staging.Changed }} +{{ .Staging.String }}{{ end }}{{ if .Working.Changed }} !{{ .Working.String }}{{ end }}{{ if gt .Working.Untracked 0 }} ?{{ .Working.Untracked }}{{ end }}",
+          "properties": { "branch_icon": " ", "fetch_status": true, "fetch_upstream_icon": false }
+        }
+      ]
+    }
+  ]
+}

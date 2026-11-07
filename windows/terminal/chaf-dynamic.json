@@ -1,0 +1,40 @@
+{
+  "profiles": [
+    {
+      "name": "chaf-dynamic",
+      "guid": "{c4a5f1e2-7b3d-4e8a-9f10-2b6d8c0a1e57}",
+      "commandline": "pwsh.exe -NoLogo",
+      "startingDirectory": "%USERPROFILE%",
+      "colorScheme": "chaf-dynamic",
+      "font": { "face": "JetBrainsMonoNL Nerd Font Mono", "size": 12, "weight": "light" },
+      "historySize": 10000,
+      "cursorShape": "bar",
+      "closeOnExit": "graceful"
+    }
+  ],
+  "schemes": [
+    {
+      "name": "chaf-dynamic",
+      "background": "#9A9A9A",
+      "foreground": "#000000",
+      "cursorColor": "#FC6A08",
+      "selectionBackground": "#FC6A08",
+      "black": "#121214",
+      "red": "#9E0019",
+      "green": "#105A0B",
+      "yellow": "#5A4502",
+      "blue": "#0B2DA9",
+      "purple": "#750077",
+      "cyan": "#0B545B",
+      "white": "#000000",
+      "brightBlack": "#4A4A4C",
+      "brightRed": "#C40020",
+      "brightGreen": "#126A0B",
+      "brightYellow": "#765803",
+      "brightBlue": "#153CCC",
+      "brightPurple": "#950097",
+      "brightCyan": "#0D6772",
+      "brightWhite": "#000000"
+    }
+  ]
+}
