@@ -46,6 +46,10 @@ export WORDCHARS=0
 export HOMEBREW_NO_AUTO_UPDATE=1
 export CASE_SENSITIVE=false
 
+# Copilot CLI Ctrl+G: `code` returns immediately, so block until the tab closes
+export COPILOT_EDITOR="code --wait"
+export EDITOR="code --wait"
+
 # ~~~~~~~~~~~~~~~~~~ Dotfiles ~~~~~~~~~~~~~~~~~~~
 source $ZSH_HOME/aliases.zsh
 source $ZSH_HOME/functions.zsh
@@ -119,3 +123,8 @@ unset -f path_prepend path_append
 [[ -r $ZSH_HOME/local.zsh ]] && source $ZSH_HOME/local.zsh
 export PATH="/opt/homebrew/opt/node@22/bin:$PATH"
 export PATH="/opt/homebrew/opt/node@22/bin:$PATH"
+
+
+# ~~~~~~~~~~~~~~~~~~ gcloud cli ~~~~~~~~~~~~~~~~~~~
+export PATH=/opt/homebrew/share/google-cloud-sdk/bin:"$PATH"
+source /opt/homebrew/share/google-cloud-sdk/completion.zsh.inc
