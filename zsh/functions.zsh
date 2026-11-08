@@ -61,14 +61,39 @@ function airdrop() {
     done
     osascript -l JavaScript - "${(@)^${@:A}}" <<'EOF'
 ObjC.import("AppKit");
+ObjC.import("stdlib");
+let airDropDelegate;
+ObjC.registerSubclass({
+    name: "AirDropDelegate",
+    protocols: ["NSSharingServiceDelegate"],
+    methods: {
+        "sharingService:didShareItems:": {
+            types: ["void", ["id", "id"]],
+            implementation: function (svc, items) { $.NSApplication.sharedApplication.terminate(null); }
+        },
+        "sharingService:didFailToShareItems:error:": {
+            types: ["void", ["id", "id", "id"]],
+            implementation: function (svc, items, err) {
+                const message = $("airdrop: " + ObjC.unwrap(err.localizedDescription) + "\n");
+                $.NSFileHandle.fileHandleWithStandardError.writeData(message.dataUsingEncoding($.NSUTF8StringEncoding));
+                $.exit(1);
+            }
+        }
+    }
+});
 function run(argv) {
     const items = $.NSMutableArray.alloc.init;
     argv.forEach(p => items.addObject($.NSURL.fileURLWithPath(p)));
     const svc = $.NSSharingService.sharingServiceNamed("com.apple.share.AirDrop.send");
     if (!svc.canPerformWithItems(items)) { throw new Error("AirDrop unavailable (is it enabled?)"); }
+    // A real app run loop is needed for the picker and transfer UI to finish drawing.
+    const app = $.NSApplication.sharedApplication;
+    app.setActivationPolicy($.NSApplicationActivationPolicyAccessory);
+    airDropDelegate = $.AirDropDelegate.alloc.init;
+    svc.delegate = airDropDelegate;
+    app.activateIgnoringOtherApps(true);
     svc.performWithItems(items);
-    // keep the process alive while the picker is open
-    $.NSRunLoop.currentRunLoop.runUntilDate($.NSDate.dateWithTimeIntervalSinceNow(120));
+    app.run;
 }
 EOF
 }
