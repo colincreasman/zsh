@@ -48,6 +48,30 @@ function ghash() {
     print -n -- $sha | pbcopy
     echo $sha
 }
+# ~~~~~~~~~~~~~~~~~~ Functions[macOS] ~~~~~~~~~~~~~~~~~~~
+# Open the AirDrop share sheet for one or more files; pick the recipient there.
+function airdrop() {
+    if [[ $# -eq 0 ]]; then
+        echo "usage: airdrop <file>..." >&2
+        return 1
+    fi
+    local f
+    for f in "$@"; do
+        [[ -e $f ]] || { echo "airdrop: no such file: $f" >&2; return 1; }
+    done
+    osascript -l JavaScript - "${(@)^${@:A}}" <<'EOF'
+ObjC.import("AppKit");
+function run(argv) {
+    const items = $.NSMutableArray.alloc.init;
+    argv.forEach(p => items.addObject($.NSURL.fileURLWithPath(p)));
+    const svc = $.NSSharingService.sharingServiceNamed("com.apple.share.AirDrop.send");
+    if (!svc.canPerformWithItems(items)) { throw new Error("AirDrop unavailable (is it enabled?)"); }
+    svc.performWithItems(items);
+    // keep the process alive while the picker is open
+    $.NSRunLoop.currentRunLoop.runUntilDate($.NSDate.dateWithTimeIntervalSinceNow(120));
+}
+EOF
+}
 # ~~~~~~~~~~~~~~~~~~ Functions[PS] ~~~~~~~~~~~~~~~~~~~
 function psls() {
     ps aux | grep -i $1 | grep -v grep
