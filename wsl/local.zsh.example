@@ -1,0 +1,4 @@
+# Linux/WSL-only paths, SDK initialization and project shortcuts.
+# This file is copied to local.zsh, which is gitignored and loaded last.
+# export REPOS=$HOME/Repos
+# alias ce='cd /usr/local/src/pae/ce1'

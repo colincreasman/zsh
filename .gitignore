@@ -1,6 +1,7 @@
 # Machine-specific config (work paths, proxies, secrets)
 zsh/local.zsh
 windows/local.ps1
+wsl/local.zsh
 
 # Plugins cloned by install.sh
 plugins/

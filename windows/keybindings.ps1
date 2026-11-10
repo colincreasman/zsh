@@ -5,6 +5,17 @@
 
 $script:Esc = [char]27
 
+function Get-CompletionPath {
+    param([string]$Text)
+    $tokens = $null; $errors = $null
+    $ast = [System.Management.Automation.Language.Parser]::ParseInput($Text, [ref]$tokens, [ref]$errors)
+    $expression = $ast.Find({
+        param($node)
+        $node -is [System.Management.Automation.Language.StringConstantExpressionAst]
+    }, $true)
+    if (-not $errors -and $expression) { $expression.Value } else { $Text }
+}
+
 function Set-ShellKeyBindings {
     if (-not (Get-Module -ListAvailable PSReadLine)) { return }
     Import-Module PSReadLine
@@ -22,14 +33,13 @@ function Set-ShellKeyBindings {
     }
     foreach ($o in $options.GetEnumerator()) {
         $setting = @{ $o.Key = $o.Value }
-        try { Set-PSReadLineOption -ErrorAction Stop @setting } catch {}
+        Set-PSReadLineOption -ErrorAction Stop @setting
     }
 
     # ~~~~~~~~~~~~~~~~~~ Syntax highlighting (zsh-syntax-highlighting) ~~~~~~~~~~~~~~~~~~~
     # Same xterm-256 numbers as ZSH_HIGHLIGHT_STYLES / ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE.
     $fg = { param($n, $extra = '') '{0}[38;5;{1}{2}m' -f $script:Esc, $n, $extra }
-    try {
-        Set-PSReadLineOption -Colors @{
+    Set-PSReadLineOption -Colors @{
             Command          = & $fg 80
             Keyword          = & $fg 126 ';4'
             Parameter        = & $fg 81
@@ -43,8 +53,7 @@ function Set-ShellKeyBindings {
             Default          = "$($script:Esc)[35m"
             Error            = & $fg 11
             InlinePrediction = & $fg 131 ';7'
-        }
-    } catch {}
+    }
 
     # ~~~~~~~~~~~~~~~~~~ Key bindings ~~~~~~~~~~~~~~~~~~~
     # Up/Down browse history filtered by what's typed (zsh: ghost-text history).
@@ -54,6 +63,11 @@ function Set-ShellKeyBindings {
     # Ctrl+Space accepts the whole suggestion, Alt+Space one word.
     try { Set-PSReadLineKeyHandler -Chord 'Ctrl+Spacebar' -Function AcceptSuggestion } catch {}
     try { Set-PSReadLineKeyHandler -Chord 'Alt+Spacebar' -Function AcceptNextSuggestionWord } catch {}
+    Set-PSReadLineKeyHandler -Chord 'Ctrl+Alt+Spacebar' -Function AcceptNextSuggestionWord
+    Set-PSReadLineKeyHandler -Chord 'Alt+LeftArrow' -Function ShellBackwardWord
+    Set-PSReadLineKeyHandler -Chord 'Alt+RightArrow' -Function ShellForwardWord
+    Set-PSReadLineKeyHandler -Chord 'Alt+Shift+LeftArrow' -Function SelectShellBackwardWord
+    Set-PSReadLineKeyHandler -Chord 'Alt+Shift+RightArrow' -Function SelectShellForwardWord
 
     # Windows muscle memory: Ctrl+Z undoes, Ctrl+Shift+Z / Ctrl+Y / Alt+- redo.
     Set-PSReadLineKeyHandler -Chord 'Ctrl+z' -Function Undo
@@ -99,55 +113,56 @@ function Set-ShellKeyBindings {
 }
 
 # ~~~~~~~~~~~~~~~~~~ fzf (fzf + fzf-tab) ~~~~~~~~~~~~~~~~~~~
-# PSFzf gives Ctrl+R (fzf over history), Ctrl+T (file picker) and fzf Tab
-# completion; the preview pane shows each candidate's tooltip, which we fill
-# with the same eza listing the Mac's fzf-tab previews use.
+# PSFzf supplies history/file pickers. Its Tab preview ignores completion
+# tooltips, so our Tab handler passes those to a separate preview process.
 function Initialize-Completions {
     if (-not (Get-Command fzf -ErrorAction SilentlyContinue)) { return }
 
     if (Get-Module -ListAvailable PSFzf) {
         Import-Module PSFzf
-        Set-PsFzfOption -PSReadlineChordProvider 'Ctrl+t' -PSReadlineChordReverseHistory 'Ctrl+r' `
-            -TabExpansion -TabCompletionPreviewWindow 'right'
+        Set-PsFzfOption -PSReadlineChordProvider 'Alt+t' -PSReadlineChordReverseHistory 'Ctrl+r'
     }
 
-    $listing = { param($path)
-        if (Get-Command eza -ErrorAction SilentlyContinue) {
-            eza -1a --group-directories-first --classify --sort=name --color=never -- $path 2>$null | Out-String
+    $script:CompletionPreview = Join-Path $PSScriptRoot 'completion-preview.ps1'
+    Set-PSReadLineKeyHandler -Key Tab -BriefDescription FzfCompletion -ScriptBlock {
+        $line = $null; $cursor = $null
+        [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
+        $completion = [System.Management.Automation.CommandCompletion]::CompleteInput($line, $cursor, $null)
+        $matches = @($completion.CompletionMatches)
+        if (-not $matches.Count) { return }
+        $selected = $matches[0]
+        if ($matches.Count -gt 1) {
+            $dataPath = [IO.Path]::GetTempFileName()
+            try {
+                $matches | Select-Object CompletionText, ToolTip | ConvertTo-Json -Depth 3 |
+                    Set-Content -LiteralPath $dataPath -Encoding utf8
+                $preview = 'pwsh -NoLogo -NoProfile -File "{0}" -DataPath "{1}" -Index {{1}}' -f $script:CompletionPreview, $dataPath
+                $items = for ($i = 0; $i -lt $matches.Count; $i++) {
+                    "{0}`t{1}" -f $i, $matches[$i].ListItemText
+                }
+                $choice = $items | fzf --layout=reverse --delimiter='\t' --with-nth='2..' `
+                    --preview $preview --preview-window=right:50% --bind=tab:down,shift-tab:up
+                if ($LASTEXITCODE -in 1, 130) { return }
+                if ($LASTEXITCODE -ne 0) { throw "fzf completion failed (exit $LASTEXITCODE)" }
+                $selected = $matches[[int]($choice -split "`t", 2)[0]]
+            }
+            finally {
+                Remove-Item -LiteralPath $dataPath
+                [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
+            }
         }
-        else { (Get-ChildItem -Force -LiteralPath $path -ErrorAction SilentlyContinue | ForEach-Object Name) -join "`n" }
+        [Microsoft.PowerShell.PSConsoleReadLine]::Replace($completion.ReplacementIndex, $completion.ReplacementLength, $selected.CompletionText)
     }
-    $script:EzaListing = $listing
 
-    # Commands that take a path: complete files, with a directory listing as preview.
-    # Cmdlets (and their aliases cd/cat/rm/mv/cp) bind by -Path; anything else is
-    # treated as a native command that just receives words.
-    $pathCompleter = {
-        param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-        [System.Management.Automation.CompletionCompleters]::CompleteFilename($wordToComplete) | ForEach-Object {
-            $tip = if ($_.ResultType -eq 'ProviderContainer') { & $script:EzaListing ($_.CompletionText.Trim("'")) } else { $_.ToolTip }
-            if (-not $tip) { $tip = $_.CompletionText }
-            [System.Management.Automation.CompletionResult]::new($_.CompletionText, $_.ListItemText, $_.ResultType, $tip)
-        }
-    }
-    $script:PathCompleter = $pathCompleter
-    Register-ArgumentCompleter -ParameterName Path -ScriptBlock $pathCompleter -CommandName `
-        'Set-Location', 'Get-ChildItem', 'Get-Content', 'Remove-Item', 'Move-Item', 'Copy-Item', 'New-Item', 'mkdir'
-    Register-ArgumentCompleter -Native -ScriptBlock {
-        param($wordToComplete, $commandAst, $cursorPosition)
-        & $script:PathCompleter $null $null $wordToComplete $commandAst $null
-    } -CommandName 'ls', 'eza', 'find', 'tail', 'chmod', 'sh'
-
-    # z<Tab>: offer zoxide's own ranked matches, previewing each directory.
+    # Keep built-in path completion. The preview process lists only the selected
+    # directory, rather than launching eza for every candidate before fzf opens.
     if (Get-Command zoxide -ErrorAction SilentlyContinue) {
         Register-ArgumentCompleter -Native -CommandName z -ScriptBlock {
             param($wordToComplete, $commandAst, $cursorPosition)
             $words = @($commandAst.CommandElements | Select-Object -Skip 1 | ForEach-Object { $_.ToString() })
             zoxide query --list -- @words 2>$null | Select-Object -First 30 | ForEach-Object {
-                $q = if ($_ -match '\s') { "'$_'" } else { $_ }
-                $tip = & $script:EzaListing $_
-                if (-not $tip) { $tip = $_ }
-                [System.Management.Automation.CompletionResult]::new($q, $_, 'ParameterValue', $tip)
+                $q = "'" + $_.Replace("'", "''") + "'"
+                [System.Management.Automation.CompletionResult]::new($q, $_, 'ParameterValue', $_)
             }
         }
     }

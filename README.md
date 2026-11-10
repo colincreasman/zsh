@@ -5,6 +5,8 @@ fzf-driven completion and history, an `eza`-based `ls`, and the `chaf-dynamic`
 Terminal.app profile.
 
 > On Windows? The PowerShell equivalent of all of this lives in [`windows/`](windows/README.md).
+> Using WSL? The Linux setup in [`wsl/`](wsl/README.md) shares the Mac zsh prompt,
+> aliases and widgets, with Windows clipboard and Terminal integration.
 
 ## Fresh Mac, from zero
 

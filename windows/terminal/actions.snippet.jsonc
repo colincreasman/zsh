@@ -3,4 +3,8 @@
 { "command": "scrollUpPage",   "keys": "ctrl+up" },
 { "command": "scrollDownPage", "keys": "ctrl+down" },
 { "command": "scrollToTop",    "keys": "ctrl+shift+home" },
-{ "command": "scrollToBottom", "keys": "ctrl+shift+end" }
+{ "command": "scrollToBottom", "keys": "ctrl+shift+end" },
+// Let PSReadLine/zsh receive these instead of Windows Terminal.
+{ "command": "unbound", "keys": "ctrl+space" },
+{ "command": "unbound", "keys": "alt+space" },
+{ "command": "unbound", "keys": "ctrl+shift+z" }

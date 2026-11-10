@@ -12,7 +12,7 @@ $env:LS_COLORS = 'di=1:fi=96:*.m=31:*.py=32:*.txt=36:*.out=35'
 # Copilot CLI Ctrl+G: `code` returns immediately, so block until the tab closes
 $env:COPILOT_EDITOR = 'code --wait'
 $env:EDITOR = 'code --wait'
-$env:REPOS = Join-Path $HOME 'Personal\Repos'
+$env:REPOS = Split-Path $env:ZSH_CONFIG -Parent
 $env:KBD = Join-Path $env:REPOS 'kbd'
 
 # ~~~~~~~~~~~~~~~~~~ PATH ~~~~~~~~~~~~~~~~~~~
@@ -48,7 +48,9 @@ if (Test-Path $androidSdk) {
 pyinit
 
 # Everything below needs a real console; skip it for `pwsh -Command ...` runs.
-if ($Host.Name -eq 'ConsoleHost') {
+if ($Host.Name -eq 'ConsoleHost' -and
+    -not [Console]::IsInputRedirected -and -not [Console]::IsOutputRedirected -and
+    -not ([Environment]::GetCommandLineArgs() -match '^-(Command|c|EncodedCommand|e|File|f|NonInteractive)$')) {
 
     # ~~~~~~~~~~~~~~~~~~ Prompt (Powerlevel10k -> Oh My Posh) ~~~~~~~~~~~~~~~~~~~
     if (Get-Command oh-my-posh -ErrorAction SilentlyContinue) {

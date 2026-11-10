@@ -16,18 +16,21 @@
   Skip the Windows Terminal profile.
 .PARAMETER NoExtras
   Skip the packages marked "optional" in packages.json.
+.PARAMETER ShellOnly
+  Install only the interactive shell dependencies, not development applications.
 #>
 [CmdletBinding()]
 param(
     [switch]$NoPackages,
     [switch]$NoModules,
     [switch]$NoTerminal,
-    [switch]$NoExtras
+    [switch]$NoExtras,
+    [switch]$ShellOnly
 )
 
 $ErrorActionPreference = 'Stop'
 $Repo = $PSScriptRoot
-$Stamp = Get-Date -Format 'yyyyMMddHHmmss'
+$Stamp = Get-Date -Format 'yyyyMMddHHmmssfff'
 $Marker = '# zsh-config windows stub'
 
 function Info($m) { Write-Host "==> $m" -ForegroundColor Blue }
@@ -37,6 +40,16 @@ function Warn($m) { Write-Host " !! $m" -ForegroundColor Yellow }
 if ($env:OS -ne 'Windows_NT') { Warn 'Windows only (use ./install.sh on macOS).'; exit 1 }
 
 $config = Get-Content (Join-Path $Repo 'packages.json') -Raw | ConvertFrom-Json
+$shellCommands = @{
+    'Microsoft.PowerShell' = 'pwsh'
+    'Git.Git' = 'git'
+    'JanDeDobbeleer.OhMyPosh' = 'oh-my-posh'
+    'junegunn.fzf' = 'fzf'
+    'eza-community.eza' = 'eza'
+    'ajeetdsouza.zoxide' = 'zoxide'
+    'sharkdp.bat' = 'bat'
+}
+$env:PATH = [Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('PATH', 'User')
 
 # ------------------------------------------------------------------
 # 1. Execution policy (profiles are scripts)
@@ -59,6 +72,20 @@ if (-not $NoPackages) {
         Info 'Installing packages with winget...'
         foreach ($p in $config.packages) {
             if ($NoExtras -and $p.optional) { continue }
+            if ($ShellOnly -and $p.id -notin @(
+                'Microsoft.PowerShell', 'Git.Git', 'JanDeDobbeleer.OhMyPosh',
+                'junegunn.fzf', 'eza-community.eza', 'ajeetdsouza.zoxide',
+                'sharkdp.bat', 'DEVCOM.JetBrainsMonoNerdFont'
+            )) { continue }
+            if ($p.id -eq 'DEVCOM.JetBrainsMonoNerdFont') {
+                try { & (Join-Path $Repo 'install-font.ps1'); Ok $p.name }
+                catch { Warn $_.Exception.Message; $failed += $p.name }
+                continue
+            }
+            if ($shellCommands.ContainsKey($p.id) -and (Get-Command $shellCommands[$p.id] -ErrorAction SilentlyContinue)) {
+                Ok "$($p.name) (already available)"
+                continue
+            }
             winget list --id $p.id --exact --accept-source-agreements *> $null
             if ($LASTEXITCODE -eq 0) { Ok "$($p.name) (already installed)"; continue }
             winget install --id $p.id --exact --silent --accept-package-agreements --accept-source-agreements
@@ -74,6 +101,10 @@ if (-not $NoModules) {
     Info 'Installing PowerShell modules (CurrentUser scope)...'
     foreach ($m in $config.modules) {
         try {
+            if (Get-Module -ListAvailable $m.name | Where-Object { $_.Version -ge [version]$m.minimumVersion }) {
+                Ok "$($m.name) (already installed)"
+                continue
+            }
             Install-Module -Name $m.name -Scope CurrentUser -Force -AllowClobber -SkipPublisherCheck -ErrorAction Stop
             Ok $m.name
         }
@@ -87,7 +118,7 @@ if (-not $NoModules) {
 Info 'Linking the PowerShell profile...'
 $docs = [Environment]::GetFolderPath('MyDocuments')
 $stub = "$Marker`n. '$(Join-Path $Repo 'profile.ps1')'`n"
-foreach ($dir in 'PowerShell', 'WindowsPowerShell') {
+foreach ($dir in 'PowerShell') {
     $target = Join-Path $docs "$dir\profile.ps1"
     New-Item -ItemType Directory -Force -Path (Split-Path $target) | Out-Null
     if ((Test-Path $target) -and -not (Select-String -Path $target -SimpleMatch $Marker -Quiet)) {
@@ -97,6 +128,15 @@ foreach ($dir in 'PowerShell', 'WindowsPowerShell') {
     Set-Content -Path $target -Value $stub -Encoding UTF8
     Ok $target
 }
+
+# Host-specific profiles load after profile.ps1 and otherwise override its keys
+# and aliases. Preserve the old file, but leave customization in local.ps1.
+$hostProfile = Join-Path $docs 'PowerShell\Microsoft.PowerShell_profile.ps1'
+if ((Test-Path $hostProfile) -and -not (Select-String -Path $hostProfile -SimpleMatch $Marker -Quiet)) {
+    Move-Item $hostProfile "$hostProfile.bak-$Stamp"
+    Warn "backed up host profile to $hostProfile.bak-$Stamp"
+}
+Set-Content -Path $hostProfile -Value "$Marker`n# Setup is loaded by profile.ps1; put overrides in windows\local.ps1." -Encoding UTF8
 
 # ------------------------------------------------------------------
 # 5. Machine-local overrides (gitignored)
@@ -125,7 +165,9 @@ if (-not $NoTerminal) {
 # ------------------------------------------------------------------
 Info 'Verifying (new tools may need a fresh terminal to show up on PATH)...'
 $env:PATH = [Environment]::GetEnvironmentVariable('PATH', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('PATH', 'User')
-foreach ($cmd in 'pwsh', 'git', 'gh', 'oh-my-posh', 'fzf', 'eza', 'zoxide', 'bat', 'code') {
+$commands = @('pwsh', 'git', 'oh-my-posh', 'fzf', 'eza', 'zoxide', 'bat')
+if (-not $ShellOnly) { $commands += 'gh', 'code' }
+foreach ($cmd in $commands) {
     if (Get-Command $cmd -ErrorAction SilentlyContinue) { Ok $cmd } else { Warn "missing: $cmd" }
 }
 foreach ($m in $config.modules) {

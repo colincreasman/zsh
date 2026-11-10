@@ -28,7 +28,7 @@
     { "id": "Android.PlatformTools",          "name": "Android platform-tools",  "optional": true }
   ],
   "modules": [
-    { "name": "PSReadLine", "why": "inline suggestions, syntax colors (2.2+)" },
-    { "name": "PSFzf",      "why": "fzf Ctrl+R / Ctrl+T / Tab completion" }
+    { "name": "PSReadLine", "minimumVersion": "2.2.0", "why": "inline suggestions, syntax colors (2.2+)" },
+    { "name": "PSFzf",      "minimumVersion": "2.7.0", "why": "fzf Ctrl+R / Ctrl+T" }
   ]
 }

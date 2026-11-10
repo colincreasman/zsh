@@ -1,5 +1,29 @@
 # Agent handoff: finish the Windows PowerShell setup
 
+## Windows follow-up (2026-11-10)
+
+The Windows port is now installed and runtime-tested on the PC (PowerShell 7.6.9).
+The historical notes below describe its original, Mac-only state. Current details
+and validation commands are in `windows/README.md` and `wsl/README.md`.
+
+- Shell-only installation passes twice without reinstalling working commands/modules.
+- Host-specific profile conflicts are backed up; the PC's work helpers are retained
+  through the ignored `windows/local.ps1`.
+- The Nerd Font is registered per-user; the verified family is `JetBrainsMonoNL NFM`.
+- PSFzf does not preview completion tooltips, so a custom fzf Tab handler supplies
+  `eza` previews, including paths with spaces/apostrophes. Runtime regression tests pass.
+- Ubuntu 22.04 WSL now uses zsh with the actual shared Mac prompt/widgets. The
+  interactive PTY regression verifies zsh-z candidates, fzf previews, insertion,
+  untouched-buffer ghost history and Ctrl+Space acceptance.
+- Matching PowerShell/WSL Terminal fragments are installed. The PC's default and
+  scroll/suggestion keybindings were configured locally; generic installers leave
+  global `settings.json` alone.
+- Live Windows Terminal UI testing was blocked by the environment's app policy.
+  Windows key delivery and visual rendering still need a manual check after reopening.
+- Non-shell/optional winget package IDs have not been exhaustively verified.
+
+## Original handoff
+
 You are picking this up on Colin's **Windows PC**. The setup was written and tested on his Mac
 (PowerShell 7 on macOS), **never run on real Windows**. Your job: run it, fix what breaks, and
 get it to feel like his Mac zsh setup.
