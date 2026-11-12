@@ -16,6 +16,51 @@ function Get-CompletionPath {
     if (-not $errors -and $expression) { $expression.Value } else { $Text }
 }
 
+function Get-ShellCompletion {
+    param([string]$Line, [int]$Cursor)
+    $completion = [System.Management.Automation.CommandCompletion]::CompleteInput($Line, $Cursor, $null)
+    if ($Line.Substring(0, $Cursor) -match '^\s*git(?:\.exe)?\s+([^\s]*)$') {
+        $prefix = $Matches[1]
+        if (-not $script:GitCommandDescriptions) {
+            $descriptions = git --no-pager help -a --no-aliases --no-external-commands
+            if ($LASTEXITCODE) { throw 'Could not load Git subcommand descriptions.' }
+            $script:GitCommandDescriptions = @{}
+            foreach ($description in $descriptions) {
+                if ($description -match '^\s{3}(\S+)\s{2,}(.+)$') {
+                    $script:GitCommandDescriptions[$Matches[1]] = $Matches[2]
+                }
+            }
+        }
+        for ($i = 0; $i -lt $completion.CompletionMatches.Count; $i++) {
+            $match = $completion.CompletionMatches[$i]
+            if ($script:GitCommandDescriptions.ContainsKey($match.CompletionText)) {
+                $completion.CompletionMatches[$i] = [System.Management.Automation.CompletionResult]::new(
+                    $match.CompletionText, $match.ListItemText, $match.ResultType,
+                    $script:GitCommandDescriptions[$match.CompletionText]
+                )
+            }
+        }
+        foreach ($command in ($script:GitCommandDescriptions.Keys | Sort-Object)) {
+            if ($command.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase) -and
+                $command -notin $completion.CompletionMatches.CompletionText) {
+                $completion.CompletionMatches.Add([System.Management.Automation.CompletionResult]::new(
+                    $command, $command, 'ParameterValue', $script:GitCommandDescriptions[$command]
+                ))
+            }
+        }
+    }
+    $completion
+}
+
+function Invoke-CompletionPrompt {
+    $encoding = [Console]::OutputEncoding
+    try {
+        [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
+        [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
+    }
+    finally { [Console]::OutputEncoding = $encoding }
+}
+
 function Set-ShellKeyBindings {
     if (-not (Get-Module -ListAvailable PSReadLine)) { return }
     Import-Module PSReadLine
@@ -118,6 +163,29 @@ function Set-ShellKeyBindings {
 # PSFzf supplies history/file pickers. Its Tab preview ignores completion
 # tooltips, so our Tab handler passes those to a separate preview process.
 function Initialize-Completions {
+    $originalPrompt = $function:prompt
+    try { Import-Module posh-git -ErrorAction Stop }
+    finally { Set-Item Function:\global:prompt -Value $originalPrompt }
+
+    # posh-git's proxy-function support only recognizes $args, not our @args wrappers.
+    $script:GitShortcutPrefixes = @{}
+    Get-Command -CommandType Function | Where-Object {
+        $_.ScriptBlock.File -eq (Join-Path $PSScriptRoot 'aliases.ps1')
+    } | ForEach-Object {
+        if ($_.Definition -match '^\s*(git(?:\s+[^;\r\n]+)?)\s+@args\s*$') {
+            $script:GitShortcutPrefixes[$_.Name] = $Matches[1]
+        }
+    }
+    if ($script:GitShortcutPrefixes.Count) {
+        Register-ArgumentCompleter -Native -CommandName @($script:GitShortcutPrefixes.Keys) -ScriptBlock {
+            param($wordToComplete, $commandAst, $cursorPosition)
+            $name = $commandAst.CommandElements[0]
+            $text = $commandAst.Extent.Text.PadRight($cursorPosition - $commandAst.Extent.StartOffset)
+            $arguments = $text.Substring($name.Extent.EndOffset - $commandAst.Extent.StartOffset)
+            Expand-GitCommand ($script:GitShortcutPrefixes[$name.Value] + $arguments)
+        }
+    }
+
     if (-not (Get-Command fzf -ErrorAction SilentlyContinue)) { return }
 
     if (Get-Module -ListAvailable PSFzf) {
@@ -129,14 +197,14 @@ function Initialize-Completions {
     Set-PSReadLineKeyHandler -Key Tab -BriefDescription FzfCompletion -ScriptBlock {
         $line = $null; $cursor = $null
         [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
-        $completion = [System.Management.Automation.CommandCompletion]::CompleteInput($line, $cursor, $null)
+        $completion = Get-ShellCompletion $line $cursor
         $matches = @($completion.CompletionMatches)
         if (-not $matches.Count) { return }
         $selected = $matches[0]
         if ($matches.Count -gt 1) {
             $dataPath = [IO.Path]::GetTempFileName()
             try {
-                $matches | Select-Object CompletionText, ToolTip | ConvertTo-Json -Depth 3 |
+                $matches | Select-Object CompletionText, ToolTip, ResultType | ConvertTo-Json -Depth 3 |
                     Set-Content -LiteralPath $dataPath -Encoding utf8
                 $preview = 'pwsh -NoLogo -NoProfile -File "{0}" -DataPath "{1}" -Index {{1}}' -f $script:CompletionPreview, $dataPath
                 $items = for ($i = 0; $i -lt $matches.Count; $i++) {
@@ -150,7 +218,7 @@ function Initialize-Completions {
             }
             finally {
                 Remove-Item -LiteralPath $dataPath
-                [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
+                Invoke-CompletionPrompt
             }
         }
         [Microsoft.PowerShell.PSConsoleReadLine]::Replace($completion.ReplacementIndex, $completion.ReplacementLength, $selected.CompletionText)
@@ -164,7 +232,7 @@ function Initialize-Completions {
             $words = @($commandAst.CommandElements | Select-Object -Skip 1 | ForEach-Object { $_.ToString() })
             zoxide query --list -- @words 2>$null | Select-Object -First 30 | ForEach-Object {
                 $q = "'" + $_.Replace("'", "''") + "'"
-                [System.Management.Automation.CompletionResult]::new($q, $_, 'ParameterValue', $_)
+                [System.Management.Automation.CompletionResult]::new($q, $_, 'ProviderContainer', $_)
             }
         }
     }

@@ -32,7 +32,7 @@ Flags: `-ShellOnly`, `-NoPackages`, `-NoModules`, `-NoTerminal`, `-NoExtras` (sk
 2. Installs packages with `winget`, skipping already available shell commands.
    The Nerd Font is installed from upstream into the user's font directory without admin:
    winget's font MSI only supports machine scope. Its verified family name is `JetBrainsMonoNL NFM`.
-3. Installs the `PSReadLine` and `PSFzf` modules.
+3. Installs the `PSReadLine`, `PSFzf` and `posh-git` modules.
 4. Writes a stub into `Documents\PowerShell\profile.ps1` that dot-sources `windows\profile.ps1`.
    Existing all-host and host-specific profiles are backed up to `*.bak-<timestamp>`.
    Put machine-specific helpers in `local.ps1` before installing; an old host profile
@@ -72,6 +72,7 @@ The profile resolves its own location, so the repo can live anywhere.
 | zsh-syntax-highlighting | PSReadLine `-Colors`, same xterm-256 numbers |
 | zsh-z | zoxide; `z<Tab>` lists zoxide's own ranked matches in fzf, previewing each with `eza` |
 | fzf-tab (`eza` previews) | Custom fzf Tab picker with a right-hand `eza` preview; ordinary parameters show their help tooltip. PSFzf's built-in Tab preview does not use completion tooltips. |
+| Git command completion | `posh-git` supplies subcommands, options and branches. `git <Tab>` also previews descriptions from the installed Git's help; simple Git shortcuts such as `gc` inherit their underlying command's completion. |
 | `Ctrl+R` fzf history | PSFzf `Ctrl+R` (inserts the pick; no ghost-text step) |
 | `Ctrl+T` file picker | `Alt+T`, keeping Windows Terminal's `Ctrl+T` new-tab shortcut |
 | `Up`/`Down` prefix history | `HistorySearchBackward/Forward` (edits the buffer, doesn't ghost it) |
@@ -93,6 +94,17 @@ Paste `terminal/actions.snippet.jsonc` into Terminal's actions to enable scroll
 shortcuts and release suggestion/redo chords to the shells. The installer does not
 change your default profile or global keybindings; select the default in Terminal Settings.
 
+Tab uses PowerShell's registered command/parameter completers before its normal
+filesystem fallback. Functions with parameter completers keep their specific
+candidates and descriptions. Other native CLIs need their PowerShell completer
+registered; zsh completion scripts cannot be reused directly. Only directory
+candidates get `eza` previews, so a command/branch name matching a local directory
+does not replace its help preview with a file listing.
+
+The post-fzf prompt redraw temporarily uses UTF-8, matching Oh My Posh's own
+redraw handling, then restores the previous console encoding. This prevents
+the prompt gutters/status glyphs turning into `?` on legacy Windows code pages.
+
 Not ported (Mac-only): Homebrew/MacPorts paths, `.vimrc`, Karabiner/Cmd-Q tweaks, Terminal.app
 key map. `fzf` isn't wired to `Alt+C` (it's the copy key, as on the Mac).
 
@@ -109,5 +121,17 @@ pwsh -NoLogo -NoProfile -File .\windows\tests.ps1
 ```
 
 Tests use temporary directories and an isolated zoxide database. They cover spaces
-and apostrophes in previews, parameter tooltips, real zoxide completion and the Tab binding.
+and apostrophes in previews, parameter tooltips, real zoxide completion, Git
+subcommands/help/branches/options, Git shortcuts, function completers and Space/Tab bindings.
 Noninteractive `pwsh -Command`/`-File` startup skips console-only setup.
+
+An optional headless Windows console regression (requires `pywinpty`) exercises
+the real Git/fzf popup, description preview, selection, cancel and Unicode prompt
+redraw with code page 437:
+
+```powershell
+python .\windows\interactive-tests.py
+```
+
+It opens an isolated pseudoconsole, not your working Terminal tabs, and keeps
+test history in a temporary directory.

@@ -29,6 +29,7 @@
   ],
   "modules": [
     { "name": "PSReadLine", "minimumVersion": "2.2.0", "why": "inline suggestions, syntax colors (2.2+)" },
-    { "name": "PSFzf",      "minimumVersion": "2.7.0", "why": "fzf Ctrl+R / Ctrl+T" }
+    { "name": "PSFzf",      "minimumVersion": "2.7.0", "why": "fzf Ctrl+R / Alt+T" },
+    { "name": "posh-git",   "minimumVersion": "1.1.0", "why": "Git subcommand, option, branch and path completions" }
   ]
 }

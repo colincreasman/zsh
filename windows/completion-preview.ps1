@@ -8,7 +8,8 @@ $ErrorActionPreference = 'Stop'
 $items = @(Get-Content -LiteralPath $DataPath -Raw | ConvertFrom-Json)
 $item = $items[$Index]
 $path = Get-CompletionPath $item.CompletionText
-if (Test-Path -LiteralPath $path -PathType Container) {
+if ($item.ResultType -eq [int][System.Management.Automation.CompletionResultType]::ProviderContainer -and
+    (Test-Path -LiteralPath $path -PathType Container)) {
     if (Get-Command eza -ErrorAction SilentlyContinue) {
         eza -1a --group-directories-first --classify --sort=name --color=always -- $path
         exit $LASTEXITCODE
