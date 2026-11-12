@@ -75,7 +75,7 @@ The profile resolves its own location, so the repo can live anywhere.
 | `Ctrl+R` fzf history | PSFzf `Ctrl+R` (inserts the pick; no ghost-text step) |
 | `Ctrl+T` file picker | `Alt+T`, keeping Windows Terminal's `Ctrl+T` new-tab shortcut |
 | `Up`/`Down` prefix history | `HistorySearchBackward/Forward` (edits the buffer, doesn't ghost it) |
-| `Ctrl+Space` / `Opt+Space` accept | `Ctrl+Space` whole suggestion / `Alt+Space` one word (`Ctrl+Alt+Space` fallback if Windows claims Alt+Space) |
+| `Ctrl+Space` / `Opt+Space` accept | `Ctrl+Space` whole suggestion / `Alt+Space` one word (`Ctrl+Alt+Right` fallback if Windows claims Alt+Space). Plain Space always types a space. |
 | `Ctrl+X` expand alias | `Ctrl+X` (expands aliases and the one-line function shortcuts) |
 | `Opt+C` copy selection/rest | `Alt+C` (selection or cursor-to-end; can't include the grey suggestion) |
 | `Shift+arrows` selection | PSReadLine's built-in `Shift`/`Ctrl+Shift`+arrows |

@@ -3,6 +3,32 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'profile.ps1')
 . (Join-Path $PSScriptRoot 'keybindings.ps1')
 
+# Prediction requires a real terminal; exercise the remaining setup when redirected.
+function Set-PSReadLineOption {
+    $options = @{}
+    for ($i = 0; $i -lt $args.Count; $i += 2) {
+        $options[$args[$i].TrimStart('-').TrimEnd(':')] = $args[$i + 1]
+    }
+    $options.Remove('PredictionSource')
+    PSReadLine\Set-PSReadLineOption @options
+}
+try {
+    Set-ShellKeyBindings
+    Set-ShellKeyBindings
+    $bindings = @{
+        Spacebar = 'SelfInsert'
+        'Ctrl+Spacebar' = 'AcceptSuggestion'
+        'Alt+Spacebar' = 'AcceptNextSuggestionWord'
+        'Ctrl+Alt+RightArrow' = 'AcceptNextSuggestionWord'
+    }
+    foreach ($chord in $bindings.Keys) {
+        $handler = Get-PSReadLineKeyHandler -Chord $chord
+        if ($handler.Function -ne $bindings[$chord]) { throw "Incorrect binding for $chord." }
+    }
+    Write-Output 'PASS: plain Space inserts text; suggestion shortcuts remain separate after reload.'
+}
+finally { Remove-Item Function:\Set-PSReadLineOption }
+
 $temp = Join-Path ([IO.Path]::GetTempPath()) ("shell-parity-" + [guid]::NewGuid())
 $oldDatabase = $env:ZOXIDE_DB_DIR
 New-Item -ItemType Directory -Path $temp | Out-Null

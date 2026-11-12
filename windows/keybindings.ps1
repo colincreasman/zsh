@@ -63,7 +63,9 @@ function Set-ShellKeyBindings {
     # Ctrl+Space accepts the whole suggestion, Alt+Space one word.
     try { Set-PSReadLineKeyHandler -Chord 'Ctrl+Spacebar' -Function AcceptSuggestion } catch {}
     try { Set-PSReadLineKeyHandler -Chord 'Alt+Spacebar' -Function AcceptNextSuggestionWord } catch {}
-    Set-PSReadLineKeyHandler -Chord 'Ctrl+Alt+Spacebar' -Function AcceptNextSuggestionWord
+    # Ctrl+Alt+Space can normalize to plain Space with Windows AltGr handling.
+    Set-PSReadLineKeyHandler -Chord 'Ctrl+Alt+RightArrow' -Function AcceptNextSuggestionWord
+    Set-PSReadLineKeyHandler -Chord 'Spacebar' -Function SelfInsert
     Set-PSReadLineKeyHandler -Chord 'Alt+LeftArrow' -Function ShellBackwardWord
     Set-PSReadLineKeyHandler -Chord 'Alt+RightArrow' -Function ShellForwardWord
     Set-PSReadLineKeyHandler -Chord 'Alt+Shift+LeftArrow' -Function SelectShellBackwardWord
