@@ -15,6 +15,11 @@ export COPILOT_EDITOR='code --wait'
 
 source "$ZSH_PLUGINS/powerlevel10k/powerlevel10k.zsh-theme"
 [[ -r ~/.p10k.zsh ]] && source ~/.p10k.zsh
+function prompt_shell_context() {
+  p10k segment -f 5 -t "[WSL:${WSL_DISTRO_NAME:-Linux}]"
+}
+typeset -g POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(shell_context ${POWERLEVEL9K_LEFT_PROMPT_ELEMENTS:#shell_context})
+p10k reload
 source "$ZSH_HOME/aliases.zsh"
 source "$ZSH_HOME/functions.zsh"
 source "$ZSH_HOME/git-dirlog.sh"

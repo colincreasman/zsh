@@ -16,6 +16,8 @@ Existing dotfiles are backed up, not deleted. Re-running leaves installed tools 
 
 The Linux entry point reuses **the actual Mac prompt, aliases, widgets and fzf
 preview settings**, including ghost-text Up/Down history and zsh-z-ranked `z<Tab>`.
+Its first prompt line adds **[WSL:distro]** before the path so it cannot be
+mistaken for the Windows **[PWSH]** prompt. The shared Mac prompt stays unchanged.
 Only `~/.zshrc` and `~/.p10k.zsh` are linked; Bash, login files and project tools
 are left intact. Put Linux-specific overrides in the ignored `wsl/local.zsh`.
 Windows' clipboard is used by `pb`/`pbp`/`ghash` and Alt+C; `o` opens Windows

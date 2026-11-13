@@ -92,15 +92,16 @@ with tempfile.TemporaryDirectory(prefix="shell-completion-") as directory:
         assert "?-" not in text and "?\u2500" not in text, "Prompt was redrawn with replacement characters"
 
     try:
+        expect("[PWSH]")
         expect("\u276f")
         start = len(output)
         child.write("git \t")
         expect("Add file contents to the index", start)
         child.write("\r")
+        expect("\u256d", start)
         result = state()
         assert result["Line"] == "git add", result
         assert result["CodePage"] == 437, result
-        expect("\u256d", start)
         check_redraw(start)
 
         child.write("\x03")
@@ -108,9 +109,9 @@ with tempfile.TemporaryDirectory(prefix="shell-completion-") as directory:
         child.write("Get-ChildItem -\t")
         expect("Path", start)
         child.write("\x1b")
+        expect("\u256d", start)
         result = state()
         assert result["Line"] == "Get-ChildItem -", result
-        expect("\u256d", start)
         check_redraw(start)
         print("PASS: real Windows git/fzf help preview, insertion/cancel and Unicode prompt redraw under code page 437.")
     except Exception:

@@ -9,6 +9,7 @@
       "newline": true,
       "segments": [
         { "type": "text", "style": "plain", "foreground": "darkGray", "template": "╭─ " },
+        { "type": "text", "style": "plain", "foreground": "cyan", "template": "[PWSH] " },
         {
           "type": "path",
           "style": "plain",

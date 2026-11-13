@@ -41,6 +41,7 @@ with tempfile.TemporaryDirectory(prefix="shell-parity-") as temp:
         raise RuntimeError("No ZLE state report received")
 
     try:
+        child.expect(r"\[WSL:[^\]]+\]")
         child.sendline(
             "HISTFILE=" + shlex.quote(os.path.join(temp, ".history"))
             + "; print -r -- SHELL_PTY_$((20+22))"

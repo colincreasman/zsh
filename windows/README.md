@@ -3,6 +3,8 @@
 The PowerShell counterpart of the macOS zsh setup: **PowerShell 7 + Oh My Posh** (for
 Powerlevel10k), **PSReadLine** (autosuggest, syntax colors, key bindings), **fzf/PSFzf**,
 **zoxide** (for zsh-z), `eza`-based `ls`, and a `chaf-dynamic` Windows Terminal profile.
+The first prompt line shows **[PWSH]** before the path; WSL uses a distinct
+**[WSL:distro]** label.
 
 Validated on Windows with PowerShell 7.6: repeat shell-only installs, fresh profile
 startup, prompt rendering, quoted-path previews and zoxide completions. Live Windows
